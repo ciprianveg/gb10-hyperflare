@@ -22,9 +22,12 @@ cluster serving tensor-parallel 16 over the RoCE fabric.
 
 ## Runtime binary
 
-Use the bundled `flare-linux-x86_64` from this repository — it carries the GB10
-TP16 transport customizations this core requires. Upstream flare binaries will
-fail trust verification or transport connection against this core.
+Download `flare-linux-x86_64` from this repository and install it as `flare` on
+**every one of the 16 nodes** (`chmod +x flare-linux-x86_64 && sudo cp flare-linux-x86_64 /usr/local/bin/flare`).
+It carries the GB10 TP16 transport customizations this core requires — upstream
+flare binaries fail trust verification or transport connection against this core.
+The exact serving source this binary was built from:
+`github.com/ciprianveg/gb10-hyperflare` branch `k31-gb10-tp16` (single release commit).
 
 ## Download
 
@@ -32,26 +35,34 @@ fail trust verification or transport connection against this core.
 flare download ciprianv/kimi-k3.1-pro-dspark-flare-gb10-tp16
 ```
 
-or the Docker equivalent (mount the models directory and run the flare binary
-from the image, exactly as the runtime's own run guide describes):
+Run this on ONE node (or all — the package is cached under `~/.cache/flare` and
+shared via NFS if your cluster mounts a common models directory).
+
+## Run — 16-node launch (default: fixed NST3)
+
+Multi-host serving needs one head command and one peer command per node. On the
+HEAD node (the one others connect to), pick a rendezvous port (e.g. 29911):
 
 ```sh
-docker run --rm --pull never --network host \
-  --mount type=bind,src=/home/ciprian/models,dst=/models,readonly \
-  --entrypoint /qualification/flare <flare-image> \
-  download ciprianv/kimi-k3.1-pro-dspark-flare-gb10-tp16
+flare run ciprianv/kimi-k3.1-pro-dspark-flare-gb10-tp16   --rank 0 --rendezvous HEAD_IP:29911   --host 0.0.0.0 --port 8000 --gpus 0 --memory-limit=-2G   --mtp-draft-tokens 3 --no-mtp-adaptive-verification --no-history-drafts
 ```
 
-## Run — default (fixed NST3)
+On each of the 15 PEER nodes (HEAD_IP = the head node's IP):
 
 ```sh
-flare run ciprianv/kimi-k3.1-pro-dspark-flare-gb10-tp16 \
-  --mtp-draft-tokens 3 --no-mtp-adaptive-verification --no-history-drafts
+flare run ciprianv/kimi-k3.1-pro-dspark-flare-gb10-tp16   --rank N --rendezvous HEAD_IP:29911 --gpus 0 --memory-limit=-2G   --mtp-draft-tokens 3 --no-mtp-adaptive-verification --no-history-drafts
 ```
+
+with `--rank` 1..15, one rank per node. Rank 0 serves the OpenAI-compatible API
+on `:8000`. On first load flare prompts to review and accept the publisher —
+the signer is `ciprianv` (production key, fingerprint in `publisher.json` at
+this repository's root).
 
 ## Run — optional adaptive speculation
 
-For adaptive speculation use `--mtp-draft-tokens 7 --mtp-adaptive-verification` instead of the fixed-NST3 flags.
+Replace the three fixed-NST3 flags
+(`--mtp-draft-tokens 3 --no-mtp-adaptive-verification --no-history-drafts`)
+with `--mtp-draft-tokens 7 --mtp-adaptive-verification` on every node.
 
 ## Credits
 
