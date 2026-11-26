@@ -1,0 +1,670 @@
+{
+ "artifact": "/home/ciprian/models/models111/Inferact-Kimi-K3.1-Pro-DSpark/model.safetensors",
+ "revision": "e4e6e6261e9f8b6d5f249f9627eb6b109d762d5f",
+ "method": "safetensors header only (8-byte length + JSON header); no weight bytes read; file-level SHA-256 verification reused from RESUME 1460-1487",
+ "header_metadata": {
+  "format": "pt"
+ },
+ "tensor_count": 62,
+ "tensors": {
+  "confidence_head.proj.bias": {
+   "shape": [
+    1
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    0,
+    2
+   ]
+  },
+  "confidence_head.proj.weight": {
+   "shape": [
+    1,
+    7680
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    2,
+    15362
+   ]
+  },
+  "fc.weight": {
+   "shape": [
+    7168,
+    35840
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    15362,
+    513817602
+   ]
+  },
+  "hidden_norm.weight": {
+   "shape": [
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    513817602,
+    513831938
+   ]
+  },
+  "layers.0.input_layernorm.weight": {
+   "shape": [
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    513831938,
+    513846274
+   ]
+  },
+  "layers.0.mlp.down_proj.weight": {
+   "shape": [
+    7168,
+    14336
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    513846274,
+    719367170
+   ]
+  },
+  "layers.0.mlp.gate_proj.weight": {
+   "shape": [
+    14336,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    719367170,
+    924888066
+   ]
+  },
+  "layers.0.mlp.up_proj.weight": {
+   "shape": [
+    14336,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    924888066,
+    1130408962
+   ]
+  },
+  "layers.0.post_attention_layernorm.weight": {
+   "shape": [
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    1130408962,
+    1130423298
+   ]
+  },
+  "layers.0.self_attn.k_norm.weight": {
+   "shape": [
+    64
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    1130423298,
+    1130423426
+   ]
+  },
+  "layers.0.self_attn.k_proj.weight": {
+   "shape": [
+    1024,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    1130423426,
+    1145103490
+   ]
+  },
+  "layers.0.self_attn.o_proj.weight": {
+   "shape": [
+    7168,
+    6144
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    1145103490,
+    1233183874
+   ]
+  },
+  "layers.0.self_attn.q_norm.weight": {
+   "shape": [
+    64
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    1233183874,
+    1233184002
+   ]
+  },
+  "layers.0.self_attn.q_proj.weight": {
+   "shape": [
+    6144,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    1233184002,
+    1321264386
+   ]
+  },
+  "layers.0.self_attn.v_proj.weight": {
+   "shape": [
+    1024,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    1321264386,
+    1335944450
+   ]
+  },
+  "layers.1.input_layernorm.weight": {
+   "shape": [
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    1335944450,
+    1335958786
+   ]
+  },
+  "layers.1.mlp.down_proj.weight": {
+   "shape": [
+    7168,
+    14336
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    1335958786,
+    1541479682
+   ]
+  },
+  "layers.1.mlp.gate_proj.weight": {
+   "shape": [
+    14336,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    1541479682,
+    1747000578
+   ]
+  },
+  "layers.1.mlp.up_proj.weight": {
+   "shape": [
+    14336,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    1747000578,
+    1952521474
+   ]
+  },
+  "layers.1.post_attention_layernorm.weight": {
+   "shape": [
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    1952521474,
+    1952535810
+   ]
+  },
+  "layers.1.self_attn.k_norm.weight": {
+   "shape": [
+    64
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    1952535810,
+    1952535938
+   ]
+  },
+  "layers.1.self_attn.k_proj.weight": {
+   "shape": [
+    1024,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    1952535938,
+    1967216002
+   ]
+  },
+  "layers.1.self_attn.o_proj.weight": {
+   "shape": [
+    7168,
+    6144
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    1967216002,
+    2055296386
+   ]
+  },
+  "layers.1.self_attn.q_norm.weight": {
+   "shape": [
+    64
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    2055296386,
+    2055296514
+   ]
+  },
+  "layers.1.self_attn.q_proj.weight": {
+   "shape": [
+    6144,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    2055296514,
+    2143376898
+   ]
+  },
+  "layers.1.self_attn.v_proj.weight": {
+   "shape": [
+    1024,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    2143376898,
+    2158056962
+   ]
+  },
+  "layers.2.input_layernorm.weight": {
+   "shape": [
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    2158056962,
+    2158071298
+   ]
+  },
+  "layers.2.mlp.down_proj.weight": {
+   "shape": [
+    7168,
+    14336
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    2158071298,
+    2363592194
+   ]
+  },
+  "layers.2.mlp.gate_proj.weight": {
+   "shape": [
+    14336,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    2363592194,
+    2569113090
+   ]
+  },
+  "layers.2.mlp.up_proj.weight": {
+   "shape": [
+    14336,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    2569113090,
+    2774633986
+   ]
+  },
+  "layers.2.post_attention_layernorm.weight": {
+   "shape": [
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    2774633986,
+    2774648322
+   ]
+  },
+  "layers.2.self_attn.k_norm.weight": {
+   "shape": [
+    64
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    2774648322,
+    2774648450
+   ]
+  },
+  "layers.2.self_attn.k_proj.weight": {
+   "shape": [
+    1024,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    2774648450,
+    2789328514
+   ]
+  },
+  "layers.2.self_attn.o_proj.weight": {
+   "shape": [
+    7168,
+    6144
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    2789328514,
+    2877408898
+   ]
+  },
+  "layers.2.self_attn.q_norm.weight": {
+   "shape": [
+    64
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    2877408898,
+    2877409026
+   ]
+  },
+  "layers.2.self_attn.q_proj.weight": {
+   "shape": [
+    6144,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    2877409026,
+    2965489410
+   ]
+  },
+  "layers.2.self_attn.v_proj.weight": {
+   "shape": [
+    1024,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    2965489410,
+    2980169474
+   ]
+  },
+  "layers.3.input_layernorm.weight": {
+   "shape": [
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    2980169474,
+    2980183810
+   ]
+  },
+  "layers.3.mlp.down_proj.weight": {
+   "shape": [
+    7168,
+    14336
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    2980183810,
+    3185704706
+   ]
+  },
+  "layers.3.mlp.gate_proj.weight": {
+   "shape": [
+    14336,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    3185704706,
+    3391225602
+   ]
+  },
+  "layers.3.mlp.up_proj.weight": {
+   "shape": [
+    14336,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    3391225602,
+    3596746498
+   ]
+  },
+  "layers.3.post_attention_layernorm.weight": {
+   "shape": [
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    3596746498,
+    3596760834
+   ]
+  },
+  "layers.3.self_attn.k_norm.weight": {
+   "shape": [
+    64
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    3596760834,
+    3596760962
+   ]
+  },
+  "layers.3.self_attn.k_proj.weight": {
+   "shape": [
+    1024,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    3596760962,
+    3611441026
+   ]
+  },
+  "layers.3.self_attn.o_proj.weight": {
+   "shape": [
+    7168,
+    6144
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    3611441026,
+    3699521410
+   ]
+  },
+  "layers.3.self_attn.q_norm.weight": {
+   "shape": [
+    64
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    3699521410,
+    3699521538
+   ]
+  },
+  "layers.3.self_attn.q_proj.weight": {
+   "shape": [
+    6144,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    3699521538,
+    3787601922
+   ]
+  },
+  "layers.3.self_attn.v_proj.weight": {
+   "shape": [
+    1024,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    3787601922,
+    3802281986
+   ]
+  },
+  "layers.4.input_layernorm.weight": {
+   "shape": [
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    3802281986,
+    3802296322
+   ]
+  },
+  "layers.4.mlp.down_proj.weight": {
+   "shape": [
+    7168,
+    14336
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    3802296322,
+    4007817218
+   ]
+  },
+  "layers.4.mlp.gate_proj.weight": {
+   "shape": [
+    14336,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    4007817218,
+    4213338114
+   ]
+  },
+  "layers.4.mlp.up_proj.weight": {
+   "shape": [
+    14336,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    4213338114,
+    4418859010
+   ]
+  },
+  "layers.4.post_attention_layernorm.weight": {
+   "shape": [
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    4418859010,
+    4418873346
+   ]
+  },
+  "layers.4.self_attn.k_norm.weight": {
+   "shape": [
+    64
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    4418873346,
+    4418873474
+   ]
+  },
+  "layers.4.self_attn.k_proj.weight": {
+   "shape": [
+    1024,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    4418873474,
+    4433553538
+   ]
+  },
+  "layers.4.self_attn.o_proj.weight": {
+   "shape": [
+    7168,
+    6144
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    4433553538,
+    4521633922
+   ]
+  },
+  "layers.4.self_attn.q_norm.weight": {
+   "shape": [
+    64
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    4521633922,
+    4521634050
+   ]
+  },
+  "layers.4.self_attn.q_proj.weight": {
+   "shape": [
+    6144,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    4521634050,
+    4609714434
+   ]
+  },
+  "layers.4.self_attn.v_proj.weight": {
+   "shape": [
+    1024,
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    4609714434,
+    4624394498
+   ]
+  },
+  "markov_head.markov_w1.weight": {
+   "shape": [
+    163840,
+    512
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    4624394498,
+    4792166658
+   ]
+  },
+  "markov_head.markov_w2.weight": {
+   "shape": [
+    163840,
+    512
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    4792166658,
+    4959938818
+   ]
+  },
+  "norm.weight": {
+   "shape": [
+    7168
+   ],
+   "dtype": "BF16",
+   "byte_range": [
+    4959938818,
+    4959953154
+   ]
+  }
+ }
+}

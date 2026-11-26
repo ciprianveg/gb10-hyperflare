@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+"""CPU preparation core and command-line smoke checks."""
+
+from __future__ import annotations
+
+import pathlib
+import subprocess
+import sys
+import tomllib
+
+
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+
+
+def test_pyproject_declares_preparation_entrypoint_and_cores():
+    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text())
+    includes = set(pyproject["tool"]["setuptools"]["cores"]["find"]["include"])
+
+    assert pyproject["project"]["name"] == "ignition"
+    assert "ignition*" in includes
+    assert not any(name.startswith(("flare", "serve")) for name in includes)
+    assert pyproject["project"]["dependencies"] == []
+    assert pyproject["project"]["scripts"] == {"ignition": "ignition.__main__:main"}
+
+
+def test_core_import_has_no_runtime_or_cuda_side_effects():
+    result = subprocess.run(
+        [sys.executable, "-c", "import sys, ignition; "
+         "assert ignition.__all__ == ['__version__']; "
+         "assert 'torch' not in sys.modules; "
+         "assert 'flare_heliopause' not in sys.modules; "
+         "assert not any(n == 'serve' or n.startswith('serve.') for n in sys.modules)"],
+        cwd=ROOT, check=False, capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert not (ROOT / "serve").exists()
+
+
+def test_server_cli_help_does_not_prepare_model():
+    result = subprocess.run(
+        [sys.executable, "-m", "ignition", "--help"],
+        cwd=ROOT, check=False, capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    for command in ("export", "debug-serve", "bench"):
+        assert f"\n    {command} " in result.stdout
+    for command in ("serve", "run", "prepare", "plan", "models", "pull", "status", "config", "skill"):
+        assert f"\n    {command} " not in result.stdout

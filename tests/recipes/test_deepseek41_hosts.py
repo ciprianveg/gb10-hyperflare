@@ -1,0 +1,126 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Flare community contributors
+# SPDX-License-Identifier: Apache-2.0
+
+"""DeepSeek TP4 host placement and channels preserve the local preparation contract."""
+
+from types import SimpleNamespace
+
+import pytest
+
+from ignition import planning
+from ignition.recipes.deepseek41 import bootstrap, recipe
+
+
+def test_four_hosts_may_each_use_their_own_gpu_zero():
+    config = bootstrap.PreparationConfig(devices=(0,) * 4, hosts=("hertz", "faraday", "ampere", "maxwell"))
+    assert config.devices == (0,) * 4
+    with pytest.raises(ValueError, match="distinct GPUs"):
+        bootstrap.PreparationConfig(devices=(0,) * 4)
+    with pytest.raises(ValueError, match="distinct GPUs"):
+        bootstrap.PreparationConfig(devices=(0,) * 4, hosts=("hertz",) * 4)
+
+
+@pytest.mark.parametrize("world", [3, 4])
+@pytest.mark.parametrize("draft_tokens", [5, 7])
+@pytest.mark.parametrize("remote", [False, True])
+def test_recipe_dispatches_the_complete_plan_to_the_rank_group(monkeypatch, remote, draft_tokens, world):
+    from ignition.preparation import rank_group
+    from ignition.recipes.declaration import Speculation
+
+    gpus = tuple(planning.Gpu(i, "GB10", f"GPU-{i}", 128 << 30, 120 << 30, (12, 1)) for i in range(world))
+    plan = planning.fit(recipe.RECIPE, recipe.RECIPE.checkpoints[0], gpus, concurrency=16,
+        reserve_bytes=6 << 30, speculation=Speculation(draft_tokens=draft_tokens, token_capacity=128,
+            packed_verification=True, draft_prefix_selection="gpu"),
+        expert_scale_compression="csf")
+    ranks = SimpleNamespace(hosts=("hertz", "faraday", "ampere", "maxwell")[:world]) if remote else None
+    calls, result, storage = [], object(), object()
+    monkeypatch.setattr(rank_group, "prepare_group", lambda *args, **kwargs: calls.append((args, kwargs)) or result)
+    assert recipe.prepare("checkpoint", plan, compile_forwards=True, kernel_cache=None, progress=None,
+                          core_storage=storage, ranks=ranks) is result
+    (snapshot, config, forward), kwargs = calls[0]
+    assert snapshot == "checkpoint" and forward is bootstrap.prepare_rank
+    assert config.devices == ((0,) * world if remote else tuple(range(world)))
+    assert config.hosts == (ranks.hosts if remote else None)
+    assert config.max_active == 16 and config.draft_tokens == draft_tokens
+    assert (16, 16 * (draft_tokens + 1)) in config.packed_speculative_shapes
+    assert config.expert_scale_compression == "csf"
+    assert kwargs["ranks"] is ranks and kwargs["checkpoint"] is plan.checkpoint
+    assert kwargs["core_storage"] is storage
+
+
+@pytest.mark.parametrize("draft_tokens", [0, 5, 7])
+def test_remote_channels_cover_vocab_and_sampling_results_without_pcie(monkeypatch, draft_tokens):
+    config = bootstrap.PreparationConfig(devices=(0,) * 4, hosts=("a", "b", "c", "d"), max_active=16,
+        dspark=draft_tokens > 0, speculative_widths=tuple(range(1, draft_tokens + 2)),
+        speculative_token_capacity=128)
+    calls, runtime, storage = [], object(), object()
+    monkeypatch.setattr(bootstrap, "create_roce_runtime",
+        lambda group, device, **kwargs: calls.append(kwargs) or runtime)
+    for name in ("create_all_reduce_runtime", "create_all_gather_runtime", "create_dma_all_reduce_runtime",
+                 "create_result_broadcast_runtime"):
+        monkeypatch.setattr(bootstrap, name, lambda *args, **kwargs: pytest.fail("host ranks cannot use CUDA IPC"))
+    channels = bootstrap._collective_runtimes(config, None, None,
+        coordinator=SimpleNamespace(spans_hosts=True), core_storage=storage,
+        verification_samples=config.decode_tokens)
+    assert channels == (runtime, runtime, runtime, runtime if draft_tokens else None,
+                        runtime if draft_tokens else None)
+    assert calls[0]["core_storage"] is storage
+    assert calls[0]["pipe_tokens"] == 4096
+    assert calls[0]["max_tokens"] >= config.decode_tokens
+    sample_rows = max(config.decode_tokens, config.request_capacity * draft_tokens)
+    assert calls[0]["gather_bytes"] >= sample_rows * (129280 // 4) * 4
+    if draft_tokens:
+        from ignition.components.collectives import packed_broadcast_layout
+        from ignition.components.draft_sampling import PreparedDraftDistribution
+        from ignition.components.speculation import SpeculativeAcceptance
+
+        layouts = (PreparedDraftDistribution.broadcast_layout(16),
+                   SpeculativeAcceptance.broadcast_layout(16, draft_tokens + 1))
+        assert calls[0]["gather_bytes"] >= max(packed_broadcast_layout(layout.values())[1] for layout in layouts)
+
+
+def test_local_target_and_draft_channels_preserve_their_element_widths(monkeypatch):
+    config = bootstrap.PreparationConfig(max_active=1,
+        speculative_widths=tuple(range(1, 9)))
+    channels = []
+    def gather(group, device, **kwargs):
+        result = object()
+        channels.append((result, kwargs))
+        return result
+    monkeypatch.setattr(bootstrap, 'create_all_gather_runtime', gather)
+    for name in ('create_all_reduce_runtime', 'create_dma_all_reduce_runtime', 'create_result_broadcast_runtime'):
+        monkeypatch.setattr(bootstrap, name, lambda *args, **kwargs: object())
+    result = bootstrap._collective_runtimes(config, None, None,
+        coordinator=SimpleNamespace(spans_hosts=False),
+        core_storage=SimpleNamespace(peer_storage=object()), verification_samples=8)
+    assert result[2] is channels[0][0]
+    assert result[4] is channels[1][0]
+    assert channels[0][1]['columns'] == 2 * 129280
+    assert channels[1][1]['columns'] == 129280
+    assert channels[0][1]['max_rows'] == channels[1][1]['max_rows'] == 8
+
+
+def test_draft_factory_uses_its_bf16_channel_without_changing_target(monkeypatch):
+    target_runtime, draft_runtime = object(), object()
+    calls = []
+    monkeypatch.setattr(bootstrap, 'PreparedDraft', lambda *args, **kwargs: calls.append(kwargs) or object())
+    target, draft = bootstrap._forward_factories('bf16', window_staging=None,
+        suffix_scratch=None, vision=None, draft_vocabulary_runtime=draft_runtime)
+    draft(vocabulary_runtime=target_runtime)
+    assert calls[0]['vocabulary_runtime'] is draft_runtime
+    assert target.keywords['mla_compute_mode'] == calls[0]['mla_compute_mode'] == 'bf16'
+
+
+@pytest.mark.parametrize("mode", ["static", "runtime"])
+def test_local_reduction_workspace_follows_collective_tuning(monkeypatch, mode):
+    config = bootstrap.PreparationConfig(collective_tuning=mode, max_active=1)
+    calls = []
+    monkeypatch.setattr(bootstrap, "create_all_reduce_runtime",
+                        lambda *args, **kwargs: calls.append(kwargs) or object())
+    for name in ("create_all_gather_runtime", "create_dma_all_reduce_runtime", "create_result_broadcast_runtime"):
+        monkeypatch.setattr(bootstrap, name, lambda *args, **kwargs: object())
+    bootstrap._collective_runtimes(config, None, None,
+        coordinator=SimpleNamespace(spans_hosts=False),
+        core_storage=SimpleNamespace(peer_storage=object()), verification_samples=8)
+    assert calls[0]["collective_tuning"] == mode

@@ -1,0 +1,83 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+"""Block-local dynamic depthwise convolution with explicit BF16 arithmetic boundaries."""
+
+import torch
+import triton
+import triton.language as tl
+
+from .linear import UnquantizedProjection
+
+
+@triton.jit
+def _round(value):
+    return tl.inline_asm_elementwise("cvt.rn.bf16.f32 $0, $1;", constraints="=h,f", args=[value],
+                                    dtype=tl.bfloat16, is_pure=True, pack=1)
+
+
+@triton.jit
+def _convolve(X, Delta, Base, Y, N: tl.constexpr, H: tl.constexpr, GROUP: tl.constexpr,
+              WIDTH: tl.constexpr, TAPS: tl.constexpr, DS: tl.constexpr, SIDE: tl.constexpr,
+              BLOCK: tl.constexpr):
+    offset = tl.program_id(0) * BLOCK + tl.arange(0, BLOCK)
+    row, feature = offset // H, offset % H
+    valid = offset < N * H
+    total = tl.full((BLOCK,), 0, tl.bfloat16)
+    for tap in tl.static_range(TAPS):
+        x = tl.load(X + offset - tap * H, valid & (row % WIDTH >= tap), other=0).to(tl.float32)
+        delta = tl.load(Delta + row * DS + (SIDE * TAPS + tap) * (H // GROUP) + feature // GROUP,
+                        valid, other=0).to(tl.float32)
+        base = tl.load(Base + (SIDE * TAPS + tap) * H + feature, valid, other=0).to(tl.float32)
+        coefficient = _round(base + delta)
+        product = _round(coefficient.to(tl.float32) * x)
+        total = _round(total.to(tl.float32) + product.to(tl.float32))
+    tl.store(Y + offset, total, valid)
+
+
+class PreparedGroupedConvolution:
+    def __init__(self, source, weights, *, block_size, group_size, session, name, buffers, token_capacity=None,
+                 runtime=None, coordinator=None):
+        self.block_size, self.group_size = block_size, group_size
+        self.base, self.tokens, self.hidden = weights["base"], *source.shape
+        capacity = self.tokens if token_capacity is None else token_capacity
+        if capacity < self.tokens:
+            raise ValueError("dynamic convolution scratch capacity must cover its input rows")
+        if self.base.ndim != 3 or self.base.shape[0] != 2 or self.base.shape[2] != self.hidden:
+            raise ValueError("dynamic convolution requires two sides of hidden-width tap weights")
+        self.taps = self.base.shape[1]
+        if self.hidden % group_size or self.tokens % block_size or not 1 <= self.taps <= block_size:
+            raise ValueError("dynamic convolution groups and blocks must divide their input extents")
+        channels = 2 * self.taps * self.hidden // group_size
+        for key, width in (("coefficients", channels), ("before", self.hidden), ("after", self.hidden)):
+            if key not in buffers:
+                buffers[key] = torch.zeros((capacity, width), dtype=torch.bfloat16, device=source.device)
+        self.coefficients, self.before, self.after = (buffers[k][:self.tokens] for k in ("coefficients", "before", "after"))
+        self.gather = None
+        local = self.coefficients
+        if runtime is not None:
+            from .collectives import PreparedChunkedAllGather
+
+            if "local_coefficients" not in buffers:
+                buffers["local_coefficients"] = torch.zeros((capacity, channels // runtime.world_size),
+                                                            dtype=source.dtype, device=source.device)
+            local = buffers["local_coefficients"][:self.tokens]
+            self.gather = PreparedChunkedAllGather(local, self.coefficients, runtime=runtime,
+                session=session, coordinator=coordinator, name=name + ".gather")
+        self.project = UnquantizedProjection(source, weights["projection"], local,
+                                             session=session, name=name + ".coefficients")
+
+    def convolve(self, source, side, output):
+        torch.library.wrap_triton(_convolve)[(triton.cdiv(source.numel(), 256),)](
+            source, self.coefficients, self.base, output, self.tokens, self.hidden, self.group_size,
+            self.block_size, self.taps, self.coefficients.stride(0), side, 256)
+        return output
+
+    def prepare(self, source):
+        local = self.project(source)
+        if self.gather is not None:
+            self.gather(local)
+        return self.convolve(source, 0, self.before)
+
+    def finish(self, source):
+        return self.convolve(source, 1, self.after)
