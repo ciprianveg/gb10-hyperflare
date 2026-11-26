@@ -26,6 +26,15 @@ Kimi-K3.1-Pro prepared as a Flare runtime core for a 16-node NVIDIA DGX Spark
 
 **Context**: 2.2M tokens total KV capacity — 550K per stream at C4 (4 concurrent streams).
 
+## Context depth scaling
+
+Decode tok/s (C1, 2,048-token generations, warm):
+
+| Workload | 4k | 64k | 128k |
+|---|---|---|---|
+| coding | 29.97 | 27.82 (−7.2%) | 27.37 (−8.7%) |
+| prose | 25.73 | 24.33 (−5.4%) | 21.86 (−15.0%) |
+
 ## Runtime binary
 
 Download `flare-linux-x86_64` from this repository and install it as `flare` on
