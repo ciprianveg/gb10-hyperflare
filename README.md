@@ -1,8 +1,7 @@
 ---
 license: mit
-base_model:
-- moonshotai/Kimi-K3.1-Pro
-- Inferact/Kimi-K3.1-Pro-DSpark
+base_model: moonshotai/Kimi-K3.1-Pro
+draft_model: Inferact/Kimi-K3.1-Pro-DSpark
 tags:
 - flare
 - kimi
